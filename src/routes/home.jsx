@@ -21,9 +21,20 @@ import {
   Button,
 } from "@chakra-ui/react"
 
+const toMMSS = (second) => {
+  const mm = Math.floor(second / 60).toString()
+  const ss = (second % 60).toString().padStart(2, "0")
+  return `${mm}:${ss}`
+}
+
 function Home({ viewSize }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [duration, setDuration] = useState(60)
+
+  const [workout, setWorkout] = useState([])
+  const [totalTime, setTotalTime] = useState(0)
+  const [remainingTotalTime, setRemainingTotalTime] = useState(totalTime)
+  const [nowRound, setNowRound] = useState(1)
 
   const [roundCount, setRoundCount] = useState(12)
   const [roundTime, setRoundTime] = useState(60)
@@ -31,9 +42,7 @@ function Home({ viewSize }) {
   const [prepareTime, setPrepareTime] = useState(25)
   const [roundEndWarningTime, setRoundEndWarningTime] = useState(10)
 
-  const [roundList, setCountList] = useState([
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ])
+  const [roundList, setRoundList] = useState(new Array(roundCount).fill(0))
   const [playingRound, setPlayingRound] = useState(2)
   const [isRound, setIsRound] = useState(true)
   const preSecond = useRef(0)
@@ -44,6 +53,41 @@ function Home({ viewSize }) {
   const tick = new Audio(
     "https://www.myinstants.com/media/sounds/tick-deepfrozenapps-397275646-2.mp3"
   )
+
+  const nice = new Audio(
+    "https://www.myinstants.com/media/sounds/nice-shot-wii-sports.mp3"
+  )
+
+  const makeWorkout = () => {
+    const newWorkout = [{ now: "prepare", second: prepareTime }]
+    let newTotalTime = prepareTime
+    for (let i = 1; i <= roundCount; i++) {
+      newWorkout.push({ now: "round", round: i, second: roundTime })
+      newTotalTime += roundTime
+      if (i !== roundCount) {
+        newWorkout.push({ now: "rest", second: restTime })
+        newTotalTime += restTime
+      } else {
+        newWorkout.push({ now: "done" })
+      }
+    }
+
+    setWorkout(JSON.parse(JSON.stringify(newWorkout)))
+    setTotalTime(newTotalTime)
+
+    console.log(newWorkout)
+    console.log(toMMSS(newTotalTime))
+  }
+
+  // const startWorkout = () {
+  //   return
+  // }
+
+  useEffect(() => {
+    makeWorkout()
+  }, [])
+
+  useEffect(() => makeWorkout(), [roundCount])
 
   return (
     <>
@@ -83,7 +127,10 @@ function Home({ viewSize }) {
                     <Box>{isRound ? "ROUND" : "REST"}</Box>
                     <Center>
                       <Button
-                        onClick={() => setRoundCount((prev) => --prev)}
+                        onClick={() => {
+                          setRoundList(new Array(roundCount - 1).fill(0))
+                          setRoundCount((prev) => --prev)
+                        }}
                         colorScheme={"blackAlpha"}
                         p={1}
                       >
@@ -91,31 +138,42 @@ function Home({ viewSize }) {
                       </Button>
                       {playingRound} / {roundCount}
                       <Button
-                        onClick={() => setRoundCount((prev) => ++prev)}
+                        onClick={() => {
+                          setRoundList(new Array(roundCount + 1).fill(0))
+                          setRoundCount((prev) => ++prev)
+                        }}
                         colorScheme={"blackAlpha"}
                         p={1}
                       >
                         +
                       </Button>
                     </Center>
-                    <HStack>
-                      {roundList.map((round, index) => (
-                        <>
-                          <Box
-                            color={index + 1 <= playingRound ? "white" : "#555"}
-                          >
-                            {index + 1 === playingRound ? "⦿" : "⬤"}
-                          </Box>
-                        </>
-                      ))}
-                    </HStack>
+                    <VStack>
+                      <HStack>
+                        {roundList.map((round, index) => (
+                          <div key={index}>
+                            <Box
+                              color={
+                                index + 1 <= playingRound ? "white" : "#555"
+                              }
+                            >
+                              {index + 1 === playingRound ? "⦿" : "⬤"}
+                            </Box>
+                          </div>
+                        ))}
+                      </HStack>
+                      <Flex justifyContent={"space-between"} w="100%">
+                        <Box>{toMMSS(remainingTotalTime)}</Box>
+                        <Box>{toMMSS(totalTime)}</Box>
+                      </Flex>
+                    </VStack>
                     <Box fontSize={150}>
                       {minutes}:{seconds.toString().padStart(2, "0")}
                     </Box>
                     <Button
                       colorScheme={"whiteAlpha"}
                       onClick={() => {
-                        // bell.play()
+                        makeWorkout()
                         if (elapsedTime === 0) {
                           bell.play()
                         }
