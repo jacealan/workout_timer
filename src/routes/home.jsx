@@ -20,6 +20,7 @@ import {
   Text,
   Button,
 } from "@chakra-ui/react"
+import { RepeatClockIcon } from "@chakra-ui/icons"
 
 const toMMSS = (second) => {
   const mm = Math.floor(second / 60).toString()
@@ -30,20 +31,24 @@ const toMMSS = (second) => {
 function Home({ viewSize }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [duration, setDuration] = useState(60)
+  const [remaingDurationTime, setRemainingDurationTime] = useState(duration)
 
   const [workout, setWorkout] = useState([])
   const [totalTime, setTotalTime] = useState(0)
+  const [elapsedTotalTime, setElapsedTotalTime] = useState(0)
   const [remainingTotalTime, setRemainingTotalTime] = useState(totalTime)
   const [nowRound, setNowRound] = useState(1)
+  const [workoutIndex, setWorkoutIndex] = useState(0)
+  const workoutIndexElapsedTime = useRef(0)
 
   const [roundCount, setRoundCount] = useState(12)
-  const [roundTime, setRoundTime] = useState(60)
-  const [restTime, setRestTime] = useState(30)
   const [prepareTime, setPrepareTime] = useState(25)
+  const [roundTime, setRoundTime] = useState(60)
   const [roundEndWarningTime, setRoundEndWarningTime] = useState(10)
+  const [restTime, setRestTime] = useState(30)
 
   const [roundList, setRoundList] = useState(new Array(roundCount).fill(0))
-  const [playingRound, setPlayingRound] = useState(2)
+  const [playingRound, setPlayingRound] = useState(0)
   const [isRound, setIsRound] = useState(true)
   const preSecond = useRef(0)
 
@@ -59,24 +64,52 @@ function Home({ viewSize }) {
   )
 
   const makeWorkout = () => {
-    const newWorkout = [{ now: "prepare", second: prepareTime }]
+    const newWorkout = [{ title: "prepare", duration: prepareTime }]
     let newTotalTime = prepareTime
     for (let i = 1; i <= roundCount; i++) {
-      newWorkout.push({ now: "round", round: i, second: roundTime })
+      newWorkout.push({ title: "round", round: i, duration: roundTime })
       newTotalTime += roundTime
       if (i !== roundCount) {
-        newWorkout.push({ now: "rest", second: restTime })
+        newWorkout.push({ title: "rest", duration: restTime })
         newTotalTime += restTime
       } else {
-        newWorkout.push({ now: "done" })
+        newWorkout.push({ title: "done" })
       }
     }
 
     setWorkout(JSON.parse(JSON.stringify(newWorkout)))
     setTotalTime(newTotalTime)
+    setElapsedTotalTime(0)
+    setRemainingTotalTime(newTotalTime)
+
+    setPlayingRound(0)
+    setWorkoutIndex(0)
+    setDuration(newWorkout[0].duration)
+    setRemainingDurationTime(newWorkout[0].duration)
 
     console.log(newWorkout)
     console.log(toMMSS(newTotalTime))
+    console.log(newWorkout[workoutIndex].duration)
+    console.log(duration.current)
+  }
+
+  const playWorkout = () => {
+    setElapsedTotalTime((prev) => ++prev)
+    setRemainingTotalTime((prev) => --prev)
+    setRemainingDurationTime((prev) => --prev)
+
+    if (remaingDurationTime == 0) {
+      const newWorkoutIndex = workoutIndex + 1
+      setWorkoutIndex((prev) => ++prev)
+      setDuration(workout[newWorkoutIndex].duration)
+      setRemainingDurationTime(workout[newWorkoutIndex].duration)
+      if (workout[newWorkoutIndex].title === "round") {
+        setPlayingRound((prev) => ++prev)
+      }
+    }
+
+    console.log(workoutIndex)
+    console.log(remaingDurationTime)
   }
 
   // const startWorkout = () {
@@ -87,13 +120,14 @@ function Home({ viewSize }) {
     makeWorkout()
   }, [])
 
-  useEffect(() => makeWorkout(), [roundCount])
+  useEffect(() => makeWorkout(), [roundCount, roundTime, restTime, prepareTime])
 
   return (
     <>
       <Center bgColor={"black"} color={"white"} padding={10}>
         <VStack>
           <CountdownCircleTimer
+            key={workoutIndex}
             updateInterval={0}
             size={500}
             strokeLinecap={"round"}
@@ -113,19 +147,22 @@ function Home({ viewSize }) {
             {({ elapsedTime, remainingTime }) => {
               const minutes = Math.floor(remainingTime / 60)
               const seconds = remainingTime % 60
-              if (
-                remainingTime <= roundEndWarningTime &&
-                remainingTime.toFixed(0) !== preSecond.current.toFixed(0)
-              ) {
-                tick.play()
+              if (elapsedTime.toFixed(0) !== preSecond.current.toFixed(0)) {
+                playWorkout()
+                if (remainingTime <= roundEndWarningTime) {
+                  tick.play()
+                }
               }
-              preSecond.current = remainingTime
+              preSecond.current = elapsedTime
 
               return (
                 <>
                   <VStack>
-                    <Box>{isRound ? "ROUND" : "REST"}</Box>
-                    <Center>
+                    <Box>
+                      {/* {isRound ? "ROUND" : "REST"} */}
+                      {workout[workoutIndex]?.title.toUpperCase()}
+                    </Box>
+                    <Center style={{ margin: 0 }}>
                       <Button
                         onClick={() => {
                           setRoundList(new Array(roundCount - 1).fill(0))
@@ -148,7 +185,7 @@ function Home({ viewSize }) {
                         +
                       </Button>
                     </Center>
-                    <VStack>
+                    <VStack style={{ margin: 0 }}>
                       <HStack>
                         {roundList.map((round, index) => (
                           <div key={index}>
@@ -162,227 +199,326 @@ function Home({ viewSize }) {
                           </div>
                         ))}
                       </HStack>
-                      <Flex justifyContent={"space-between"} w="100%">
+                      <Flex
+                        justifyContent={"space-between"}
+                        w="100%"
+                        style={{ margin: 0 }}
+                      >
+                        <Box>{toMMSS(elapsedTotalTime)}</Box>
                         <Box>{toMMSS(remainingTotalTime)}</Box>
-                        <Box>{toMMSS(totalTime)}</Box>
                       </Flex>
                     </VStack>
-                    <Box fontSize={150}>
-                      {minutes}:{seconds.toString().padStart(2, "0")}
+                    <Box fontSize={150} style={{ margin: 0 }}>
+                      {/* {minutes}:{seconds.toString().padStart(2, "0")} */}
+                      {toMMSS(remaingDurationTime)}
                     </Box>
                     <Button
                       colorScheme={"whiteAlpha"}
                       onClick={() => {
-                        makeWorkout()
+                        // makeWorkout()
                         if (elapsedTime === 0) {
                           bell.play()
                         }
                         setIsPlaying((prev) => !prev)
                       }}
+                      style={{ margin: 0 }}
                     >
-                      {isPlaying ? "STOP" : "START"}
+                      {isPlaying ? "PAUSE" : "START"}
                     </Button>
+                    <Box onClick={makeWorkout}>
+                      <RepeatClockIcon />
+                    </Box>
                   </VStack>
                 </>
               )
             }}
           </CountdownCircleTimer>
-          {/*  */}
-          {/* Round Time */}
-          <HStack>
-            <Button
-              onClick={() => {
-                const newRoundTime = roundTime - 10
-                setRoundTime(newRoundTime)
-                setDuration(newRoundTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              -10
-            </Button>
-            <Button
-              onClick={() => {
-                const newRoundTime = roundTime - 1
-                setRoundTime(newRoundTime)
-                setDuration(newRoundTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              -1
-            </Button>
+          <Box h={10} />
+          <Flex justifyContent={"space-between"} w="100%">
+            {/*  */}
+            {/* Prepare Time */}
             <Flex
               flexDirection={"column"}
               justifyContent={"start"}
               alignItems={"center"}
+              border={"solid 1px white"}
+              borderRadius={20}
+              p={"10px 0"}
             >
-              <Box fontSize={50} h={58} w={150} textAlign={"center"}>
+              <HStack>
+                <Button
+                  onClick={() => setPrepareTime((prev) => prev - 1)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -1
+                </Button>
+                <Button
+                  onClick={() => setPrepareTime((prev) => prev - 10)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -10
+                </Button>
+              </HStack>
+              <Flex
+                flexDirection={"column"}
+                justifyContent={"start"}
+                alignItems={"center"}
+              >
+                <Box fontSize={35} h={35} w={110} textAlign={"center"}>
+                  {Math.floor(prepareTime / 60)}:
+                  {(prepareTime % 60).toString().padStart(2, "0")}
+                </Box>
+                <Box p={"0 10px 10px 10px"} mt={1} fontSize={10}>
+                  Prepare Time
+                </Box>
+              </Flex>
+              <HStack>
+                <Button
+                  onClick={() => setPrepareTime((prev) => prev + 1)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +1
+                </Button>
+                <Button
+                  onClick={() => setPrepareTime((prev) => prev + 10)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +10
+                </Button>
+              </HStack>
+            </Flex>
+            {/*  */}
+            {/* Round Time */}
+            <Flex
+              flexDirection={"column"}
+              justifyContent={"start"}
+              alignItems={"center"}
+              border={"solid 1px white"}
+              borderRadius={20}
+              p={"10px 0"}
+            >
+              <HStack>
+                <Button
+                  onClick={() => {
+                    const newRoundTime = roundTime - 1
+                    setRoundTime(newRoundTime)
+                    // setDuration(newRoundTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -1
+                </Button>
+                <Button
+                  onClick={() => {
+                    const newRoundTime = roundTime - 10
+                    setRoundTime(newRoundTime)
+                    // setDuration(newRoundTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -10
+                </Button>
+              </HStack>
+              <Box fontSize={35} h={35} w={110} textAlign={"center"}>
                 {Math.floor(roundTime / 60)}:
                 {(roundTime % 60).toString().padStart(2, "0")}
               </Box>
-              <Box p={"0 10px 0 10px"} mt={1} fontSize={10}>
+              <Box p={"0 10px 10px 10px"} mt={1} fontSize={10}>
                 Round Time
               </Box>
+              <HStack>
+                <Button
+                  onClick={() => {
+                    const newRoundTime = roundTime + 1
+                    setRoundTime(newRoundTime)
+                    // setDuration(newRoundTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +1
+                </Button>
+                <Button
+                  onClick={() => {
+                    const newRoundTime = roundTime + 10
+                    setRoundTime(newRoundTime)
+                    // setDuration(newRoundTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +10
+                </Button>
+              </HStack>
             </Flex>
-            <Button
-              onClick={() => {
-                const newRoundTime = roundTime + 1
-                setRoundTime(newRoundTime)
-                setDuration(newRoundTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              +1
-            </Button>
-            <Button
-              onClick={() => {
-                const newRoundTime = roundTime + 10
-                setRoundTime(newRoundTime)
-                setDuration(newRoundTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              +10
-            </Button>
-          </HStack>
-          {/*  */}
-          {/* Rest Time */}
-          <HStack>
-            <Button
-              onClick={() => {
-                const newRestTime = restTime - 10
-                setRestTime(newRestTime)
-                setDuration(newRestTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              -10
-            </Button>
-            <Button
-              onClick={() => {
-                const newRestTime = restTime - 1
-                setRestTime(newRestTime)
-                setDuration(newRestTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              -1
-            </Button>
+            {/*  */}
+            {/* Round End Warning Time */}
             <Flex
               flexDirection={"column"}
               justifyContent={"start"}
               alignItems={"center"}
+              border={"solid 1px white"}
+              borderRadius={20}
+              p={"10px 0"}
             >
-              <Box fontSize={50} h={58} w={150} textAlign={"center"}>
-                {Math.floor(restTime / 60)}:
-                {(restTime % 60).toString().padStart(2, "0")}
-              </Box>
-              <Box p={"0 10px 0 10px"} mt={1} fontSize={10}>
-                Rest Time
-              </Box>
+              <HStack>
+                <Button
+                  onClick={() => setRoundEndWarningTime((prev) => prev - 1)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -1
+                </Button>
+                <Button
+                  onClick={() => setRoundEndWarningTime((prev) => prev - 10)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -10
+                </Button>
+              </HStack>
+              <Flex
+                flexDirection={"column"}
+                justifyContent={"start"}
+                alignItems={"center"}
+              >
+                <Box fontSize={35} h={35} w={110} textAlign={"center"}>
+                  {Math.floor(roundEndWarningTime / 60)}:
+                  {(roundEndWarningTime % 60).toString().padStart(2, "0")}
+                </Box>
+                <Box p={"0 10px 10px 10px"} mt={1} fontSize={10}>
+                  Round End Warning
+                </Box>
+              </Flex>
+              <HStack>
+                <Button
+                  onClick={() => setRoundEndWarningTime((prev) => prev + 1)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +1
+                </Button>
+                <Button
+                  onClick={() => setRoundEndWarningTime((prev) => prev + 10)}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +10
+                </Button>
+              </HStack>
             </Flex>
-            <Button
-              onClick={() => {
-                const newRestTime = restTime + 1
-                setRestTime(newRestTime)
-                setDuration(newRestTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              +1
-            </Button>
-            <Button
-              onClick={() => {
-                const newRestTime = restTime + 10
-                setRestTime(newRestTime)
-                setDuration(newRestTime)
-              }}
-              colorScheme={"whiteAlpha"}
-            >
-              +10
-            </Button>
-          </HStack>
-          {/*  */}
-          {/* Prepare Time */}
-          <HStack>
-            <Button
-              onClick={() => setPrepareTime((prev) => prev - 10)}
-              colorScheme={"whiteAlpha"}
-            >
-              -10
-            </Button>
-            <Button
-              onClick={() => setPrepareTime((prev) => prev - 1)}
-              colorScheme={"whiteAlpha"}
-            >
-              -1
-            </Button>
+
+            {/*  */}
+            {/* Rest Time */}
             <Flex
               flexDirection={"column"}
               justifyContent={"start"}
               alignItems={"center"}
+              border={"solid 1px white"}
+              borderRadius={20}
+              p={"10px 0"}
             >
-              <Box fontSize={50} h={58} w={150} textAlign={"center"}>
-                {Math.floor(prepareTime / 60)}:
-                {(prepareTime % 60).toString().padStart(2, "0")}
-              </Box>
-              <Box p={"0 10px 0 10px"} mt={1} fontSize={10}>
-                Prepare Time
-              </Box>
+              <HStack>
+                <Button
+                  onClick={() => {
+                    const newRestTime = restTime - 1
+                    setRestTime(newRestTime)
+                    // setDuration(newRestTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -1
+                </Button>
+                <Button
+                  onClick={() => {
+                    const newRestTime = restTime - 10
+                    setRestTime(newRestTime)
+                    // setDuration(newRestTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  -10
+                </Button>
+              </HStack>
+              <Flex
+                flexDirection={"column"}
+                justifyContent={"start"}
+                alignItems={"center"}
+              >
+                <Box fontSize={35} h={35} w={110} textAlign={"center"}>
+                  {Math.floor(restTime / 60)}:
+                  {(restTime % 60).toString().padStart(2, "0")}
+                </Box>
+                <Box p={"0 10px 10px 10px"} mt={1} fontSize={10}>
+                  Rest Time
+                </Box>
+              </Flex>
+              <HStack>
+                <Button
+                  onClick={() => {
+                    const newRestTime = restTime + 1
+                    setRestTime(newRestTime)
+                    // setDuration(newRestTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +1
+                </Button>
+                <Button
+                  onClick={() => {
+                    const newRestTime = restTime + 10
+                    setRestTime(newRestTime)
+                    // setDuration(newRestTime)
+                  }}
+                  colorScheme={"whiteAlpha"}
+                  borderRadius={15}
+                  fontSize={14}
+                  p={0}
+                >
+                  +10
+                </Button>
+              </HStack>
             </Flex>
-            <Button
-              onClick={() => setPrepareTime((prev) => prev + 1)}
-              colorScheme={"whiteAlpha"}
-            >
-              +1
-            </Button>
-            <Button
-              onClick={() => setPrepareTime((prev) => prev + 10)}
-              colorScheme={"whiteAlpha"}
-            >
-              +10
-            </Button>
-          </HStack>
-          {/*  */}
-          {/* Round End Warning Time */}
-          <HStack>
-            <Button
-              onClick={() => setRoundEndWarningTime((prev) => prev - 10)}
-              colorScheme={"whiteAlpha"}
-            >
-              -10
-            </Button>
-            <Button
-              onClick={() => setRoundEndWarningTime((prev) => prev - 1)}
-              colorScheme={"whiteAlpha"}
-            >
-              -1
-            </Button>
-            <Flex
-              flexDirection={"column"}
-              justifyContent={"start"}
-              alignItems={"center"}
-            >
-              <Box fontSize={50} h={58} w={150} textAlign={"center"}>
-                {Math.floor(roundEndWarningTime / 60)}:
-                {(roundEndWarningTime % 60).toString().padStart(2, "0")}
-              </Box>
-              <Box p={"0 10px 0 10px"} mt={1} fontSize={10}>
-                Round End Warning Time
-              </Box>
-            </Flex>
-            <Button
-              onClick={() => setRoundEndWarningTime((prev) => prev + 1)}
-              colorScheme={"whiteAlpha"}
-            >
-              +1
-            </Button>
-            <Button
-              onClick={() => setRoundEndWarningTime((prev) => prev + 10)}
-              colorScheme={"whiteAlpha"}
-            >
-              +10
-            </Button>
-          </HStack>
+          </Flex>
         </VStack>
       </Center>
     </>
