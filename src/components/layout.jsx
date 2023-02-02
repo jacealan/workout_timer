@@ -24,7 +24,12 @@ function Layout({ viewSize }) {
       <Box position={"fixed"} top={0} w="100%">
         <Nav viewSize={viewSize} />
       </Box>
-      <Flex justifyContent={"center"} alignItems={"center"} h={"100vh"}>
+      <Flex
+        justifyContent={"center"}
+        alignItems={"center"}
+        h={"100vh"}
+        w={"100%"}
+      >
         <Outlet />
       </Flex>
       <Box position={"fixed"} bottom={0} w="100%">

@@ -93,7 +93,29 @@ function Home({ viewSize }) {
     setKeyCircle((prev) => ++prev)
   }
 
-  const onComplete = () => {}
+  const onComplete = async () => {
+    if (workoutIndex !== workout.length - 2) {
+      bell.play()
+
+      const newWorkoutIndex = (await workoutIndex) + 1
+      await setWorkoutIndex((prev) => ++prev)
+      await setPlayingRound((prev) =>
+        workout[newWorkoutIndex].title === "round" ? ++prev : prev
+      )
+      await setDuration(workout[newWorkoutIndex].duration)
+      // await setInitialRemainingTime(workout[newWorkoutIndex].duration)
+      await setRemainingDurationTime(workout[newWorkoutIndex].duration)
+
+      await setKeyCircle((prev) => ++prev)
+      setIsPlaying(true)
+    } else {
+      nice.play()
+      await setIsPlaying(false)
+      await makeWorkout()
+      await setKeyCircle((prev) => ++prev)
+    }
+    return { shouldRepeat: true, delay: 0 }
+  }
 
   const onUpdate = () => {
     setElapsedTotalTime((prev) => ++prev)
@@ -101,33 +123,33 @@ function Home({ viewSize }) {
     setRemainingDurationTime((prev) => --prev)
   }
 
-  const playWorkout = async () => {
-    setElapsedTotalTime((prev) => ++prev)
-    setRemainingTotalTime((prev) => --prev)
-    setRemainingDurationTime((prev) => --prev)
-    if (remaingDurationTime == 0) {
-      setKeyCircle((prev) => ++prev)
-      const newWorkoutIndex = workoutIndex + 1
-      setWorkoutIndex((prev) => ++prev)
-      setDuration(workout[newWorkoutIndex].duration)
-      setRemainingDurationTime(workout[newWorkoutIndex].duration)
-      if (workout[newWorkoutIndex].title === "round") {
-        setPlayingRound((prev) => ++prev)
-      }
-    }
-    // if (workout[workoutIndex].title === "done") {
-    if (remainingTotalTime === 2) {
-      console.log("done")
+  // const playWorkout = async () => {
+  //   setElapsedTotalTime((prev) => ++prev)
+  //   setRemainingTotalTime((prev) => --prev)
+  //   setRemainingDurationTime((prev) => --prev)
+  //   if (remaingDurationTime == 0) {
+  //     setKeyCircle((prev) => ++prev)
+  //     const newWorkoutIndex = workoutIndex + 1
+  //     setWorkoutIndex((prev) => ++prev)
+  //     setDuration(workout[newWorkoutIndex].duration)
+  //     setRemainingDurationTime(workout[newWorkoutIndex].duration)
+  //     if (workout[newWorkoutIndex].title === "round") {
+  //       setPlayingRound((prev) => ++prev)
+  //     }
+  //   }
+  //   // if (workout[workoutIndex].title === "done") {
+  //   if (remainingTotalTime === 2) {
+  //     console.log("done")
 
-      setIsPlaying(false)
-      setPlayingRound(0)
-      setWorkoutIndex(0)
-      setDuration(workout[0].duration)
-      setInitialRemainingTime(workout[0].duration)
-      setRemainingDurationTime(workout[0].duration)
-      nice.play()
-    }
-  }
+  //     setIsPlaying(false)
+  //     setPlayingRound(0)
+  //     setWorkoutIndex(0)
+  //     setDuration(workout[0].duration)
+  //     setInitialRemainingTime(workout[0].duration)
+  //     setRemainingDurationTime(workout[0].duration)
+  //     nice.play()
+  //   }
+  // }
 
   useEffect(() => {
     makeWorkout()
@@ -147,6 +169,8 @@ function Home({ viewSize }) {
         }
         color={"white"}
         padding={10}
+        w={"100%"}
+        h={"100%"}
       >
         <VStack>
           <CountdownCircleTimer
@@ -163,31 +187,33 @@ function Home({ viewSize }) {
             colors={["#4FC1E9", "#FFCE54", "#EC87C0", "#AC92EC"]}
             colorsTime={[duration, duration - 5, roundEndWarningTime, 0]}
             isSmoothColorTransition={true}
-            onComplete={async () => {
-              console.log(workoutIndex, workout.length)
-              if (workoutIndex !== workout.length - 2) {
-                bell.play()
-                await setKeyCircle((prev) => ++prev)
+            onComplete={onComplete}
+            //   async () => {
+            //   console.log(workoutIndex, workout.length)
+            //   await onComplete()
+            //   // if (workoutIndex !== workout.length - 2) {
+            //   //   bell.play()
+            //   //   await setKeyCircle((prev) => ++prev)
 
-                const newWorkoutIndex = (await workoutIndex) + 1
-                await setWorkoutIndex((prev) => ++prev)
-                await setPlayingRound((prev) =>
-                  workout[newWorkoutIndex].title === "round" ? ++prev : prev
-                )
-                await setDuration(workout[newWorkoutIndex].duration)
-                await setInitialRemainingTime(workout[newWorkoutIndex].duration)
-                await setRemainingDurationTime(
-                  workout[newWorkoutIndex].duration
-                )
-                setIsPlaying(true)
-              } else {
-                nice.play()
-                await setIsPlaying(false)
-                await makeWorkout()
-                await setKeyCircle((prev) => ++prev)
-              }
-              return { shouldRepeat: true, delay: 0 }
-            }}
+            //   //   const newWorkoutIndex = (await workoutIndex) + 1
+            //   //   await setWorkoutIndex((prev) => ++prev)
+            //   //   await setPlayingRound((prev) =>
+            //   //     workout[newWorkoutIndex].title === "round" ? ++prev : prev
+            //   //   )
+            //   //   await setDuration(workout[newWorkoutIndex].duration)
+            //   //   await setInitialRemainingTime(workout[newWorkoutIndex].duration)
+            //   //   await setRemainingDurationTime(
+            //   //     workout[newWorkoutIndex].duration
+            //   //   )
+            //   //   setIsPlaying(true)
+            //   // } else {
+            //   //   nice.play()
+            //   //   await setIsPlaying(false)
+            //   //   await makeWorkout()
+            //   //   await setKeyCircle((prev) => ++prev)
+            //   // }
+            //   return { shouldRepeat: true, delay: 0 }
+            // }}
             onUpdate={(remainingTime) => {
               if (isPlaying) onUpdate()
               if (remainingTime <= roundEndWarningTime && remainingTime != 0) {
