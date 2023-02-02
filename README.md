@@ -1,3 +1,5 @@
+![](public/android-chrome-192x192.png)
+
 # Workout Timer
 
 ## Libraries

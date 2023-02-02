@@ -67,11 +67,15 @@ function Home({ viewSize }) {
 
   const makeWorkout = () => {
     const newWorkout = [{ title: "prepare", duration: prepareTime }]
+    if (prepareTime === 0) newWorkout.pop()
+
     let newTotalTime = prepareTime
     for (let i = 1; i <= roundCount; i++) {
-      newWorkout.push({ title: "round", round: i, duration: roundTime })
+      if (roundTime !== 0)
+        newWorkout.push({ title: "round", round: i, duration: roundTime })
       newTotalTime += roundTime
-      if (i !== roundCount) {
+
+      if (i !== roundCount && restTime !== 0) {
         newWorkout.push({ title: "rest", duration: restTime })
         newTotalTime += restTime
       } else {
@@ -94,25 +98,27 @@ function Home({ viewSize }) {
   }
 
   const onComplete = async () => {
-    if (workoutIndex !== workout.length - 2) {
-      bell.play()
+    if (isPlaying !== false) {
+      if (workoutIndex !== workout.length - 2) {
+        bell.play()
 
-      const newWorkoutIndex = (await workoutIndex) + 1
-      await setWorkoutIndex((prev) => ++prev)
-      await setPlayingRound((prev) =>
-        workout[newWorkoutIndex].title === "round" ? ++prev : prev
-      )
-      await setDuration(workout[newWorkoutIndex].duration)
-      // await setInitialRemainingTime(workout[newWorkoutIndex].duration)
-      await setRemainingDurationTime(workout[newWorkoutIndex].duration)
+        const newWorkoutIndex = (await workoutIndex) + 1
+        await setWorkoutIndex((prev) => ++prev)
+        await setPlayingRound((prev) =>
+          workout[newWorkoutIndex].title === "round" ? ++prev : prev
+        )
+        await setDuration(workout[newWorkoutIndex].duration)
+        await setInitialRemainingTime(workout[newWorkoutIndex].duration)
+        await setRemainingDurationTime(workout[newWorkoutIndex].duration)
 
-      await setKeyCircle((prev) => ++prev)
-      setIsPlaying(true)
-    } else {
-      nice.play()
-      await setIsPlaying(false)
-      await makeWorkout()
-      await setKeyCircle((prev) => ++prev)
+        await setKeyCircle((prev) => ++prev)
+        setIsPlaying(true)
+      } else {
+        nice.play()
+        await setIsPlaying(false)
+        await makeWorkout()
+        await setKeyCircle((prev) => ++prev)
+      }
     }
     return { shouldRepeat: true, delay: 0 }
   }
@@ -123,39 +129,24 @@ function Home({ viewSize }) {
     setRemainingDurationTime((prev) => --prev)
   }
 
-  // const playWorkout = async () => {
-  //   setElapsedTotalTime((prev) => ++prev)
-  //   setRemainingTotalTime((prev) => --prev)
-  //   setRemainingDurationTime((prev) => --prev)
-  //   if (remaingDurationTime == 0) {
-  //     setKeyCircle((prev) => ++prev)
-  //     const newWorkoutIndex = workoutIndex + 1
-  //     setWorkoutIndex((prev) => ++prev)
-  //     setDuration(workout[newWorkoutIndex].duration)
-  //     setRemainingDurationTime(workout[newWorkoutIndex].duration)
-  //     if (workout[newWorkoutIndex].title === "round") {
-  //       setPlayingRound((prev) => ++prev)
-  //     }
-  //   }
-  //   // if (workout[workoutIndex].title === "done") {
-  //   if (remainingTotalTime === 2) {
-  //     console.log("done")
-
-  //     setIsPlaying(false)
-  //     setPlayingRound(0)
-  //     setWorkoutIndex(0)
-  //     setDuration(workout[0].duration)
-  //     setInitialRemainingTime(workout[0].duration)
-  //     setRemainingDurationTime(workout[0].duration)
-  //     nice.play()
-  //   }
-  // }
-
   useEffect(() => {
+    const fromLocalStorage = JSON.parse(window.localStorage.getItem("last"))
+    if (fromLocalStorage !== null) {
+      setRoundCount(fromLocalStorage.roundCount)
+      setPrepareTime(fromLocalStorage.prepareTime)
+      setRoundTime(fromLocalStorage.roundTime)
+      setRoundEndWarningTime(fromLocalStorage.roundEndWarningTime)
+      setRestTime(fromLocalStorage.restTime)
+    }
     makeWorkout()
   }, [])
 
-  useEffect(() => makeWorkout(), [roundCount, roundTime, restTime, prepareTime])
+  useEffect(() => {
+    if (roundTime < 0) setRoundTime(0)
+    if (restTime < 0) setRestTime(0)
+    if (prepareTime < 0) setPrepareTime(0)
+    makeWorkout()
+  }, [roundCount, roundTime, restTime, prepareTime])
 
   return (
     <>
@@ -188,32 +179,6 @@ function Home({ viewSize }) {
             colorsTime={[duration, duration - 5, roundEndWarningTime, 0]}
             isSmoothColorTransition={true}
             onComplete={onComplete}
-            //   async () => {
-            //   console.log(workoutIndex, workout.length)
-            //   await onComplete()
-            //   // if (workoutIndex !== workout.length - 2) {
-            //   //   bell.play()
-            //   //   await setKeyCircle((prev) => ++prev)
-
-            //   //   const newWorkoutIndex = (await workoutIndex) + 1
-            //   //   await setWorkoutIndex((prev) => ++prev)
-            //   //   await setPlayingRound((prev) =>
-            //   //     workout[newWorkoutIndex].title === "round" ? ++prev : prev
-            //   //   )
-            //   //   await setDuration(workout[newWorkoutIndex].duration)
-            //   //   await setInitialRemainingTime(workout[newWorkoutIndex].duration)
-            //   //   await setRemainingDurationTime(
-            //   //     workout[newWorkoutIndex].duration
-            //   //   )
-            //   //   setIsPlaying(true)
-            //   // } else {
-            //   //   nice.play()
-            //   //   await setIsPlaying(false)
-            //   //   await makeWorkout()
-            //   //   await setKeyCircle((prev) => ++prev)
-            //   // }
-            //   return { shouldRepeat: true, delay: 0 }
-            // }}
             onUpdate={(remainingTime) => {
               if (isPlaying) onUpdate()
               if (remainingTime <= roundEndWarningTime && remainingTime != 0) {
@@ -291,6 +256,16 @@ function Home({ viewSize }) {
                           bell.play()
                         }
                         setIsPlaying((prev) => !prev)
+                        window.localStorage.setItem(
+                          "last",
+                          JSON.stringify({
+                            roundCount: roundCount,
+                            prepareTime: prepareTime,
+                            roundTime: roundTime,
+                            roundEndWarningTime: roundEndWarningTime,
+                            restTime: restTime,
+                          })
+                        )
                       }}
                       style={{ margin: 0 }}
                     >
