@@ -15,7 +15,13 @@ import {
 function Nav({ viewSize }) {
   return (
     <>
-      <Center bgColor={"black"} color={"white"} fontSize={24} fontWeight={800}>
+      <Center
+        bgColor={"black"}
+        color={"white"}
+        fontSize={24}
+        fontWeight={800}
+        p={1}
+      >
         Workout Timer
       </Center>
     </>

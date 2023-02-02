@@ -15,8 +15,15 @@ import {
 function Nav({ viewSize }) {
   return (
     <>
-      <Center bgColor={"black"} color={"white"} fontSize={20} fontWeight={500}>
-        &copy; Appist.kr
+      <Center
+        bgColor={"black"}
+        color={"grey"}
+        fontSize={16}
+        fontWeight={300}
+        p={1}
+      >
+        &copy; Appist.kr &copy;
+        {new Date().getFullYear()}
       </Center>
     </>
   )

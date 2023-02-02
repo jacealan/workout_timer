@@ -279,7 +279,7 @@ function Home({ viewSize }) {
               )
             }}
           </CountdownCircleTimer>
-          <Box h={10} />
+          <Box h={5} />
           <Flex justifyContent={"space-between"} w="100%">
             {/*  */}
             {/* Prepare Time */}
