@@ -15,7 +15,9 @@ import {
 function Nav({ viewSize }) {
   return (
     <>
-      <Center>&copy; Appist.kr</Center>
+      <Center bgColor={"black"} color={"white"} fontSize={20} fontWeight={500}>
+        &copy; Appist.kr
+      </Center>
     </>
   )
 }

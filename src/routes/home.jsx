@@ -154,19 +154,14 @@ function Home({ viewSize }) {
             updateInterval={0}
             size={500}
             strokeLinecap={"round"}
-            strokeWidth={20}
+            strokeWidth={22}
             trailStrokeWidth={20}
             // trailColor={"black"}
             isPlaying={isPlaying}
             duration={duration}
             // initialRemainingTime={initialRemainingTime}
-            colors={["#219EBC", "#FFB703", "#FCBF49", "#EAE2B7"]}
-            colorsTime={[
-              duration,
-              duration - roundEndWarningTime,
-              roundEndWarningTime,
-              0,
-            ]}
+            colors={["#4FC1E9", "#FFCE54", "#EC87C0", "#AC92EC"]}
+            colorsTime={[duration, duration - 5, roundEndWarningTime, 0]}
             isSmoothColorTransition={true}
             onComplete={async () => {
               console.log(workoutIndex, workout.length)
