@@ -29,10 +29,8 @@ const toMMSS = (second) => {
 }
 
 function Home({ viewSize }) {
-  const [keyCircle, setKeyCircle] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [duration, setDuration] = useState(60)
-  const [initialRemainingTime, setInitialRemainingTime] = useState(duration)
   const [remaingDurationTime, setRemainingDurationTime] = useState(duration)
 
   const [workout, setWorkout] = useState([])
@@ -75,7 +73,7 @@ function Home({ viewSize }) {
         newWorkout.push({ title: "rest", duration: restTime })
         newTotalTime += restTime
       } else {
-        newWorkout.push({ title: "done", duration: 0 })
+        newWorkout.push({ title: "done" })
       }
     }
 
@@ -87,26 +85,19 @@ function Home({ viewSize }) {
     setPlayingRound(0)
     setWorkoutIndex(0)
     setDuration(newWorkout[0].duration)
-    setInitialRemainingTime(newWorkout[0].duration)
     setRemainingDurationTime(newWorkout[0].duration)
 
-    setKeyCircle((prev) => ++prev)
+    console.log(newWorkout)
+    console.log(toMMSS(newTotalTime))
+    console.log(newWorkout[workoutIndex].duration)
   }
 
-  const onComplete = () => {}
-
-  const onUpdate = () => {
+  const playWorkout = () => {
     setElapsedTotalTime((prev) => ++prev)
     setRemainingTotalTime((prev) => --prev)
     setRemainingDurationTime((prev) => --prev)
-  }
 
-  const playWorkout = async () => {
-    setElapsedTotalTime((prev) => ++prev)
-    setRemainingTotalTime((prev) => --prev)
-    setRemainingDurationTime((prev) => --prev)
     if (remaingDurationTime == 0) {
-      setKeyCircle((prev) => ++prev)
       const newWorkoutIndex = workoutIndex + 1
       setWorkoutIndex((prev) => ++prev)
       setDuration(workout[newWorkoutIndex].duration)
@@ -114,18 +105,14 @@ function Home({ viewSize }) {
       if (workout[newWorkoutIndex].title === "round") {
         setPlayingRound((prev) => ++prev)
       }
-    }
-    // if (workout[workoutIndex].title === "done") {
-    if (remainingTotalTime === 2) {
-      console.log("done")
-
-      setIsPlaying(false)
-      setPlayingRound(0)
-      setWorkoutIndex(0)
-      setDuration(workout[0].duration)
-      setInitialRemainingTime(workout[0].duration)
-      setRemainingDurationTime(workout[0].duration)
-      nice.play()
+      if (workout[newWorkoutIndex].title === "done") {
+        console.log("done")
+        setTimeout(makeWorkout, 500)
+        setPlayingRound(0)
+        setWorkoutIndex(0)
+        setIsPlaying(false)
+        nice.play()
+      }
     }
   }
 
@@ -137,20 +124,10 @@ function Home({ viewSize }) {
 
   return (
     <>
-      <Center
-        bgColor={
-          workout[workoutIndex]?.title === "round"
-            ? "#632D47"
-            : workout[workoutIndex]?.title === "rest"
-            ? "#22404B"
-            : "#2B2B35"
-        }
-        color={"white"}
-        padding={10}
-      >
+      <Center bgColor={"black"} color={"white"} padding={10}>
         <VStack>
           <CountdownCircleTimer
-            key={keyCircle}
+            key={workoutIndex}
             updateInterval={0}
             size={500}
             strokeLinecap={"round"}
@@ -159,49 +136,54 @@ function Home({ viewSize }) {
             // trailColor={"black"}
             isPlaying={isPlaying}
             duration={duration}
-            // initialRemainingTime={initialRemainingTime}
-            colors={["#219EBC", "#FFB703", "#FCBF49", "#EAE2B7"]}
-            colorsTime={[
-              duration,
-              duration - roundEndWarningTime,
-              roundEndWarningTime,
-              0,
-            ]}
+            colors={["#004777", "#F7B801", "#A30000", "#A30000"]}
+            colorsTime={[duration, duration - 10, roundEndWarningTime, 0]}
             isSmoothColorTransition={true}
-            onComplete={async () => {
-              console.log(workoutIndex, workout.length)
-              if (workoutIndex !== workout.length - 2) {
-                bell.play()
-                await setKeyCircle((prev) => ++prev)
-
-                const newWorkoutIndex = (await workoutIndex) + 1
-                await setWorkoutIndex((prev) => ++prev)
-                await setPlayingRound((prev) =>
-                  workout[newWorkoutIndex].title === "round" ? ++prev : prev
-                )
-                await setDuration(workout[newWorkoutIndex].duration)
-                await setInitialRemainingTime(workout[newWorkoutIndex].duration)
-                await setRemainingDurationTime(
-                  workout[newWorkoutIndex].duration
-                )
-                setIsPlaying(true)
-              } else {
-                nice.play()
-                await setIsPlaying(false)
-                await makeWorkout()
-                await setKeyCircle((prev) => ++prev)
-              }
-              return { shouldRepeat: true, delay: 0 }
+            onComplete={() => {
+              //   console.log(workoutIndex, workout.length)
+              //   if (workoutIndex === workout.length - 2) {
+              //     setIsPlaying(false)
+              //     nice.play()
+              //     return { shouldRepeat: true, delay: 0 } // repeat animation in 1.5 seconds
+              //   } else {
+              //     bell.play()
+              return { shouldRepeat: true, delay: 0 } // repeat animation in 1.5 seconds
+              //   }
             }}
             onUpdate={(remainingTime) => {
-              if (isPlaying) onUpdate()
-              if (remainingTime <= roundEndWarningTime && remainingTime != 0) {
+              // console.log(workoutIndex, workout.length)
+              // if (workoutIndex === workout.length - 2) {
+              //   setIsPlaying(false)
+              //   nice?.play()
+              // } else {
+              //   bell?.play()
+              // }
+              // tick.play()
+              playWorkout()
+              if (remainingTime <= roundEndWarningTime) {
                 tick.play()
               }
             }}
+            // onUpdate={({ remainingTime }) => {
+            //   if (remainingTime?.toFixed(0) !== preSecond.current?.toFixed(0)) {
+            //     playWorkout()
+            //     if (remainingTime <= roundEndWarningTime) {
+            //       tick.play()
+            //     }
+            //   }
+            //   preSecond.current = remainingTime
+            // }}
           >
             {({ elapsedTime, remainingTime }) => {
-              // console.log(elapsedTime, remainingTime)
+              const minutes = Math.floor(remainingTime / 60)
+              const seconds = remainingTime % 60
+              if (elapsedTime.toFixed(0) !== preSecond.current.toFixed(0)) {
+                // playWorkout()
+                // if (remainingTime <= roundEndWarningTime) {
+                //   tick.play()
+                // }
+              }
+              preSecond.current = elapsedTime
 
               return (
                 <>
@@ -216,7 +198,7 @@ function Home({ viewSize }) {
                           setRoundList(new Array(roundCount - 1).fill(0))
                           setRoundCount((prev) => --prev)
                         }}
-                        bgColor={"transparent"}
+                        colorScheme={"blackAlpha"}
                         p={1}
                       >
                         −
@@ -227,7 +209,7 @@ function Home({ viewSize }) {
                           setRoundList(new Array(roundCount + 1).fill(0))
                           setRoundCount((prev) => ++prev)
                         }}
-                        bgColor={"transparent"}
+                        colorScheme={"blackAlpha"}
                         p={1}
                       >
                         +
@@ -242,10 +224,7 @@ function Home({ viewSize }) {
                                 index + 1 <= playingRound ? "white" : "#555"
                               }
                             >
-                              {index + 1 === playingRound &&
-                              workout[workoutIndex].title === "round"
-                                ? "⦿"
-                                : "⬤"}
+                              {index + 1 === playingRound ? "⦿" : "⬤"}
                             </Box>
                           </div>
                         ))}
@@ -260,6 +239,7 @@ function Home({ viewSize }) {
                       </Flex>
                     </VStack>
                     <Box fontSize={150} style={{ margin: 0 }}>
+                      {/* {minutes}:{seconds.toString().padStart(2, "0")} */}
                       {toMMSS(remaingDurationTime)}
                     </Box>
                     <Button
@@ -297,10 +277,7 @@ function Home({ viewSize }) {
             >
               <HStack>
                 <Button
-                  onClick={() => {
-                    const newPrepareTime = prepareTime - 1
-                    setPrepareTime(newPrepareTime)
-                  }}
+                  onClick={() => setPrepareTime((prev) => prev - 1)}
                   colorScheme={"whiteAlpha"}
                   borderRadius={15}
                   fontSize={14}
@@ -309,10 +286,7 @@ function Home({ viewSize }) {
                   -1
                 </Button>
                 <Button
-                  onClick={() => {
-                    const newPrepareTime = prepareTime - 10
-                    setPrepareTime(newPrepareTime)
-                  }}
+                  onClick={() => setPrepareTime((prev) => prev - 10)}
                   colorScheme={"whiteAlpha"}
                   borderRadius={15}
                   fontSize={14}
@@ -336,10 +310,7 @@ function Home({ viewSize }) {
               </Flex>
               <HStack>
                 <Button
-                  onClick={() => {
-                    const newPrepareTime = prepareTime + 1
-                    setPrepareTime(newPrepareTime)
-                  }}
+                  onClick={() => setPrepareTime((prev) => prev + 1)}
                   colorScheme={"whiteAlpha"}
                   borderRadius={15}
                   fontSize={14}
@@ -348,10 +319,7 @@ function Home({ viewSize }) {
                   +1
                 </Button>
                 <Button
-                  onClick={() => {
-                    const newPrepareTime = prepareTime + 10
-                    setPrepareTime(newPrepareTime)
-                  }}
+                  onClick={() => setPrepareTime((prev) => prev + 10)}
                   colorScheme={"whiteAlpha"}
                   borderRadius={15}
                   fontSize={14}
