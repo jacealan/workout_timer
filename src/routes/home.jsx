@@ -142,11 +142,12 @@ function Home({ viewSize }) {
   }, [])
 
   useEffect(() => {
-    if (roundTime < 0) setRoundTime(0)
-    if (restTime < 0) setRestTime(0)
     if (prepareTime < 0) setPrepareTime(0)
+    if (roundTime < 0) setRoundTime(0)
+    if (roundEndWarningTime > roundTime) setRoundEndWarningTime(roundTime)
+    if (restTime < 0) setRestTime(0)
     makeWorkout()
-  }, [roundCount, roundTime, restTime, prepareTime])
+  }, [roundCount, prepareTime, roundTime, roundEndWarningTime, restTime])
 
   return (
     <>
