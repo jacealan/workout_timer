@@ -26,6 +26,8 @@
   ```
 
 - React Countdown Circle Timer: https://github.com/vydimitrov/react-countdown-circle-timer/tree/master/packages/web#readme
+- moment: https://momentjs.com/
+- React-Calendar: https://www.npmjs.com/package/react-calendar
 
 ## Reference
 

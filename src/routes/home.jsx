@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef } from "react"
-import { Routes, Route, Outlet, Link } from "react-router-dom"
+import {
+  Routes,
+  Route,
+  Outlet,
+  Link,
+  useInRouterContext,
+} from "react-router-dom"
 
 import {
   CountdownCircleTimer,
   useCountdown,
 } from "react-countdown-circle-timer"
+
+import Calendar from "react-calendar"
+import "../calendar.css"
 
 import {
   Image,
@@ -19,8 +28,24 @@ import {
   Divider,
   Text,
   Button,
+  Tooltip,
 } from "@chakra-ui/react"
-import { RepeatClockIcon } from "@chakra-ui/icons"
+import {
+  RepeatClockIcon,
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowRightIcon,
+} from "@chakra-ui/icons"
+import {
+  FaRegClock,
+  FaCalendarDay,
+  FaCalendarPlus,
+  FaPreviousIcon,
+} from "react-icons/fa"
+import { useToast } from "@chakra-ui/react"
+
+import moment from "moment"
 
 const toMMSS = (second) => {
   const mm = Math.floor(second / 60).toString()
@@ -53,6 +78,11 @@ function Home({ viewSize }) {
   const [playingRound, setPlayingRound] = useState(0)
   const [isRound, setIsRound] = useState(true)
   const preSecond = useRef(0)
+  const logWorkout = useRef([])
+  const toast = useToast()
+
+  const [showLog, setShowLog] = useState(false)
+  const [value, onChange] = useState(new Date())
 
   const bell = new Audio(
     "https://www.myinstants.com/media/sounds/boxing-bell.mp3"
@@ -64,6 +94,43 @@ function Home({ viewSize }) {
   const nice = new Audio(
     "https://www.myinstants.com/media/sounds/nice-shot-wii-sports.mp3"
   )
+
+  const getDayWorkout = (date) => {
+    const result = logWorkout.current.filter(
+      (workout) =>
+        workout.date === moment(date.toISOString()).format("YYYY-MM-DD")
+    )
+
+    let logs = []
+    result.forEach((workout) => {
+      // logs.push(`[${workout.time24}] ${workout.workout}`)
+      logs.push(`${workout.time24} ••• ${workout.workout}`)
+    })
+    return logs
+  }
+
+  const logCalcendar = () => {
+    const now = new Date()
+    const logNow = {
+      datetime: `${now.toISOString()}`,
+      date: moment(now.toISOString()).format("YYYY-MM-DD"),
+      time24: moment(now.toISOString()).format("HH:mm"),
+      time12: moment(now.toISOString()).format("hh:mm"),
+      workout: `${roundCount} x ${toMMSS(roundTime)}`,
+    }
+    logWorkout.current = [...logWorkout.current, logNow]
+    console.log(logWorkout)
+    // console.log(now.toISOString()) // 2023-02-04T15:19:19.229Z
+    // console.log(moment(now.toISOString()).format()) // 2023-02-05T00:19:19+09:00
+    // console.log(moment(now.toISOString()).format("YYYY-MM-DD")) //2023-02-05
+    // console.log(moment(now.toISOString()).format("HH:mm")) // 00:19
+    // console.log(moment(now.toISOString()).format("hh:mm")) // 12:19
+
+    window.localStorage.setItem(
+      "logWorkout",
+      JSON.stringify(logWorkout.current)
+    )
+  }
 
   const makeWorkout = () => {
     const newWorkout = [{ title: "prepare", duration: prepareTime }]
@@ -98,7 +165,7 @@ function Home({ viewSize }) {
   }
 
   const onComplete = async () => {
-    if (isPlaying !== false) {
+    if (isPlaying) {
       if (workoutIndex !== workout.length - 2) {
         bell.play()
 
@@ -112,12 +179,21 @@ function Home({ viewSize }) {
         await setRemainingDurationTime(workout[newWorkoutIndex].duration)
 
         await setKeyCircle((prev) => ++prev)
-        setIsPlaying(true)
+        // setIsPlaying(true)
       } else {
         nice.play()
         await setIsPlaying(false)
         await makeWorkout()
         await setKeyCircle((prev) => ++prev)
+
+        logCalcendar()
+        toast({
+          title: "Workout is done.",
+          description: "The workout is logged.",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        })
       }
     }
     return { shouldRepeat: true, delay: 0 }
@@ -130,22 +206,32 @@ function Home({ viewSize }) {
   }
 
   useEffect(() => {
-    const fromLocalStorage = JSON.parse(window.localStorage.getItem("last"))
+    const fromLocalStorage = JSON.parse(
+      window.localStorage.getItem("lastWorkout")
+    )
     if (fromLocalStorage !== null) {
       setRoundCount(fromLocalStorage.roundCount)
+      setRoundList(new Array(roundCount).fill(0))
       setPrepareTime(fromLocalStorage.prepareTime)
       setRoundTime(fromLocalStorage.roundTime)
       setRoundEndWarningTime(fromLocalStorage.roundEndWarningTime)
       setRestTime(fromLocalStorage.restTime)
     }
     makeWorkout()
+
+    const logFromLocalStorage = JSON.parse(
+      window.localStorage.getItem("logWorkout")
+    )
+    if (logFromLocalStorage !== null) logWorkout.current = logFromLocalStorage
   }, [])
 
   useEffect(() => {
+    if (roundCount < 1) setPrepareTime(1)
     if (prepareTime < 0) setPrepareTime(0)
     if (roundTime < 0) setRoundTime(0)
     if (roundEndWarningTime > roundTime) setRoundEndWarningTime(roundTime)
     if (restTime < 0) setRestTime(0)
+    setRoundList(new Array(roundCount).fill(0))
     makeWorkout()
   }, [roundCount, prepareTime, roundTime, roundEndWarningTime, restTime])
 
@@ -189,98 +275,177 @@ function Home({ viewSize }) {
           >
             {({ elapsedTime, remainingTime }) => {
               // console.log(elapsedTime, remainingTime)
-
-              return (
-                <>
-                  <VStack>
-                    <Box>
-                      {/* {isRound ? "ROUND" : "REST"} */}
-                      {workout[workoutIndex]?.title.toUpperCase()}
-                    </Box>
-                    <Center style={{ margin: 0 }}>
-                      <Button
-                        onClick={() => {
-                          setRoundList(new Array(roundCount - 1).fill(0))
-                          setRoundCount((prev) => --prev)
-                        }}
-                        bgColor={"transparent"}
-                        p={1}
-                      >
-                        −
-                      </Button>
-                      {playingRound} / {roundCount}
-                      <Button
-                        onClick={() => {
-                          setRoundList(new Array(roundCount + 1).fill(0))
-                          setRoundCount((prev) => ++prev)
-                        }}
-                        bgColor={"transparent"}
-                        p={1}
-                      >
-                        +
-                      </Button>
-                    </Center>
-                    <VStack style={{ margin: 0 }}>
-                      <HStack>
-                        {roundList.map((round, index) => (
-                          <div key={index}>
-                            <Box
-                              color={
-                                index + 1 <= playingRound ? "white" : "#555"
-                              }
+              if (showLog) {
+                return (
+                  <Calendar
+                    onChange={onChange}
+                    value={value}
+                    calendarType={"US"} // 요일순: 일~토
+                    navigationLabel={({ date, label, locale, view }) => (
+                      <Center w="100%" h="100%">
+                        {date.getFullYear()}년 {date.getMonth() + 1}월
+                      </Center>
+                    )}
+                    formatDay={(locale, date) => moment(date).format("D")} // 날'일' 제외하고 숫자만 보이도록 설정
+                    minDetail="month" // 상단 네비게이션에서 '월' 단위만 보이게 설정
+                    maxDetail="month" // 상단 네비게이션에서 '월' 단위만 보이게 설정
+                    // prevLabel={<ChevronLeftIcon />}
+                    // prev2Label={<ArrowLeftIcon />}
+                    // nextLabel={<ChevronRightIcon />}
+                    // next2Label={<ArrowRightIcon />}
+                    tileContent={({ activeStartDate, date, view }) => {
+                      const logs = getDayWorkout(date)
+                      if (view === "month" && logs.length > 0) {
+                        return (
+                          <Center>
+                            <Tooltip
+                              label={logs.map((log, index) => (
+                                <Box key={index}>{log}</Box>
+                              ))}
+                              fontSize={16}
+                              fontWeight={300}
+                              borderRadius={10}
+                              p={3}
                             >
-                              {index + 1 === playingRound &&
-                              workout[workoutIndex].title === "round"
-                                ? "⦿"
-                                : "⬤"}
-                            </Box>
-                          </div>
-                        ))}
-                      </HStack>
-                      <Flex
-                        justifyContent={"space-between"}
-                        w="100%"
+                              <Box
+                                w={2}
+                                h={2}
+                                bgColor={"red"}
+                                borderRadius={5}
+                                margin={"3px 0 0 0"}
+                              />
+                            </Tooltip>
+                          </Center>
+                        )
+                      } else {
+                        return (
+                          <Center>
+                            <Box w={2} h={2} margin={"3px 0 0 0"} />
+                          </Center>
+                        )
+                      }
+                    }}
+                  />
+                )
+              } else {
+                return (
+                  <>
+                    <VStack>
+                      <Box>
+                        {/* {isRound ? "ROUND" : "REST"} */}
+                        {workout[workoutIndex]?.title.toUpperCase()}
+                      </Box>
+                      <Center style={{ margin: 0 }}>
+                        <Button
+                          onClick={() => {
+                            // setRoundList(new Array(roundCount - 1).fill(0))
+                            setRoundCount((prev) => --prev)
+                          }}
+                          bgColor={"transparent"}
+                          p={1}
+                        >
+                          −
+                        </Button>
+                        {playingRound} / {roundCount}
+                        <Button
+                          onClick={() => {
+                            // setRoundList(new Array(roundCount + 1).fill(0))
+                            setRoundCount((prev) => ++prev)
+                          }}
+                          bgColor={"transparent"}
+                          p={1}
+                        >
+                          +
+                        </Button>
+                      </Center>
+                      <VStack style={{ margin: 0 }}>
+                        <HStack>
+                          {roundList.map((round, index) => (
+                            <div key={index}>
+                              <Box
+                                color={
+                                  index + 1 <= playingRound ? "white" : "#555"
+                                }
+                              >
+                                {index + 1 === playingRound &&
+                                workout[workoutIndex].title === "round"
+                                  ? "⦿"
+                                  : "⬤"}
+                              </Box>
+                            </div>
+                          ))}
+                        </HStack>
+                        <Flex
+                          justifyContent={"space-between"}
+                          alignItems={"center"}
+                          w="100%"
+                          style={{ margin: 0 }}
+                        >
+                          <Box
+                            p={"1px 5px"}
+                            bgColor={"#777"}
+                            borderRadius={10}
+                            margin={"0 10px 0 0"}
+                          >
+                            {toMMSS(elapsedTotalTime)}
+                          </Box>
+                          <Divider />
+                          <Box
+                            p={"1px 5px"}
+                            bgColor={"#777"}
+                            borderRadius={10}
+                            margin={"0 0 0 10px"}
+                          >
+                            {toMMSS(remainingTotalTime)}
+                          </Box>
+                        </Flex>
+                      </VStack>
+                      <Box fontSize={150} style={{ margin: 0 }}>
+                        {toMMSS(remaingDurationTime)}
+                      </Box>
+                      <Button
+                        colorScheme={"whiteAlpha"}
+                        onClick={() => {
+                          // makeWorkout()
+                          if (elapsedTime === 0) {
+                            bell.play()
+                          }
+                          setIsPlaying((prev) => !prev)
+                          window.localStorage.setItem(
+                            "lastWorkout",
+                            JSON.stringify({
+                              roundCount: roundCount,
+                              prepareTime: prepareTime,
+                              roundTime: roundTime,
+                              roundEndWarningTime: roundEndWarningTime,
+                              restTime: restTime,
+                            })
+                          )
+                        }}
                         style={{ margin: 0 }}
                       >
-                        <Box>{toMMSS(elapsedTotalTime)}</Box>
-                        <Box>{toMMSS(remainingTotalTime)}</Box>
-                      </Flex>
+                        {isPlaying ? "PAUSE" : "START"}
+                      </Button>
+                      <Center onClick={makeWorkout}>
+                        <RepeatClockIcon />
+                        {/* <Box w={3} />
+                        <FaCalendarPlus /> */}
+                      </Center>
                     </VStack>
-                    <Box fontSize={150} style={{ margin: 0 }}>
-                      {toMMSS(remaingDurationTime)}
-                    </Box>
-                    <Button
-                      colorScheme={"whiteAlpha"}
-                      onClick={() => {
-                        // makeWorkout()
-                        if (elapsedTime === 0) {
-                          bell.play()
-                        }
-                        setIsPlaying((prev) => !prev)
-                        window.localStorage.setItem(
-                          "last",
-                          JSON.stringify({
-                            roundCount: roundCount,
-                            prepareTime: prepareTime,
-                            roundTime: roundTime,
-                            roundEndWarningTime: roundEndWarningTime,
-                            restTime: restTime,
-                          })
-                        )
-                      }}
-                      style={{ margin: 0 }}
-                    >
-                      {isPlaying ? "PAUSE" : "START"}
-                    </Button>
-                    <Box onClick={makeWorkout}>
-                      <RepeatClockIcon />
-                    </Box>
-                  </VStack>
-                </>
-              )
+                  </>
+                )
+              }
             }}
           </CountdownCircleTimer>
-          <Box h={5} />
+          <Box
+            p={3}
+            onClick={() => {
+              setShowLog((prev) => !prev)
+            }}
+            size={20}
+          >
+            {showLog ? <FaRegClock /> : <FaCalendarDay />}
+          </Box>
           <Flex justifyContent={"space-between"} w="100%">
             {/*  */}
             {/* Prepare Time */}
