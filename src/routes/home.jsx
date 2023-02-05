@@ -166,6 +166,7 @@ function Home({ viewSize }) {
   const onComplete = async () => {
     if (isPlaying) {
       if (workoutIndex !== workout.length - 2) {
+        // await setIsPlaying(false)
         bell.play()
 
         const newWorkoutIndex = (await workoutIndex) + 1
@@ -173,17 +174,17 @@ function Home({ viewSize }) {
         await setPlayingRound((prev) =>
           workout[newWorkoutIndex].title === "round" ? ++prev : prev
         )
-        await setDuration(workout[newWorkoutIndex].duration)
-        await setInitialRemainingTime(workout[newWorkoutIndex].duration)
-        await setRemainingDurationTime(workout[newWorkoutIndex].duration)
 
-        await setKeyCircle((prev) => ++prev)
-        // setIsPlaying(true)
+        const newDuration = workout[newWorkoutIndex].duration
+        await setDuration(newDuration)
+        await setInitialRemainingTime((prev) => newDuration)
+        await setRemainingDurationTime((prev) => newDuration)
+
+        // await setIsPlaying(true)
       } else {
         nice.play()
         await setIsPlaying(false)
         await makeWorkout()
-        await setKeyCircle((prev) => ++prev)
 
         logCalcendar()
         toast({
@@ -195,7 +196,9 @@ function Home({ viewSize }) {
         })
       }
     }
-    return { shouldRepeat: true, delay: 0 }
+    await setKeyCircle((prev) => ++prev)
+
+    return { shouldRepeat: true, delay: 0.1 }
   }
 
   const onUpdate = () => {
@@ -402,7 +405,7 @@ function Home({ viewSize }) {
                         </Flex>
                       </VStack>
                       <Box fontSize={150} style={{ margin: 0 }}>
-                        {toMMSS(remaingDurationTime)}
+                        {toMMSS(remaingDurationTime + 1)}
                       </Box>
                       <Button
                         colorScheme={"whiteAlpha"}
