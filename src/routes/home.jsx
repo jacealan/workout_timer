@@ -299,7 +299,7 @@ function Home({ viewSize }) {
                           <Center>
                             <Tooltip
                               label={logs.map((log, index) => (
-                                <Box key={index} fontFamily={"Source Code Pro"}>
+                                <Box key={index} fontFamily={"Fira Code"}>
                                   {log}
                                 </Box>
                               ))}

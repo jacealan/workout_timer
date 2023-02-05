@@ -29,6 +29,8 @@ function Layout({ viewSize }) {
         alignItems={"center"}
         h={"100vh"}
         w={"100%"}
+        minHeight={"810px"}
+        minWidth={"500px"}
       >
         <Outlet />
       </Flex>
