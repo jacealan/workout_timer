@@ -2,6 +2,12 @@
 
 # Workout Timer
 
+![](public/captures/workout_timer_1.png)
+![](public/captures/workout_timer_2.png)
+![](public/captures/workout_timer_3.png)
+![](public/captures/workout_timer_4.png)
+![](public/captures/workout_timer_5.png)
+
 ## Libraries
 
 - React: https://beta.reactjs.org/

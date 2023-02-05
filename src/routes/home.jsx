@@ -205,7 +205,6 @@ function Home({ viewSize }) {
     setElapsedTotalTime((prev) => ++prev)
     setRemainingTotalTime((prev) => --prev)
     setRemainingDurationTime((prev) => prev--)
-    console.log(remainingDurationTime)
   }
 
   useEffect(() => {
