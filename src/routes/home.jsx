@@ -103,7 +103,6 @@ function Home({ viewSize }) {
 
     let logs = []
     result.forEach((workout) => {
-      // logs.push(`[${workout.time24}] ${workout.workout}`)
       logs.push(`${workout.time24} ••• ${workout.workout}`)
     })
     return logs
@@ -300,7 +299,9 @@ function Home({ viewSize }) {
                           <Center>
                             <Tooltip
                               label={logs.map((log, index) => (
-                                <Box key={index}>{log}</Box>
+                                <Box key={index} fontFamily={"Source Code Pro"}>
+                                  {log}
+                                </Box>
                               ))}
                               fontSize={16}
                               fontWeight={300}

@@ -77,6 +77,7 @@
 
 /* 요일 */
 .react-calendar__month-view__weekdays__weekday {
+  /* margin: 1px !important; */
   padding: 0.5em;
   font-family: "Pretendard Variable";
   font-size: 1em;
