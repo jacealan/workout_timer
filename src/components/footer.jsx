@@ -22,7 +22,7 @@ function Nav({ viewSize }) {
         fontWeight={300}
         p={1}
       >
-        &copy; Appist.kr &copy;
+        &copy; Appist.kr &nbsp;
         {new Date().getFullYear()}
       </Center>
     </>
