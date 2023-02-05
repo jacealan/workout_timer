@@ -228,7 +228,8 @@ function Home({ viewSize }) {
   }, [])
 
   useEffect(() => {
-    if (roundCount < 1) setPrepareTime(1)
+    if (roundCount < 1) setRoundCount(1)
+    if (roundCount > 20) setRoundCount(20)
     if (prepareTime < 0) setPrepareTime(0)
     if (roundTime < 0) setRoundTime(0)
     if (roundEndWarningTime > roundTime) setRoundEndWarningTime(roundTime)
@@ -363,13 +364,14 @@ function Home({ viewSize }) {
                         </Button>
                       </Center>
                       <VStack style={{ margin: 0 }}>
-                        <HStack>
+                        <Flex justifyContent={"space-between"}>
                           {roundList.map((round, index) => (
                             <div key={index}>
                               <Box
                                 color={
                                   index + 1 <= playingRound ? "white" : "#555"
                                 }
+                                margin={"0 2px"}
                               >
                                 {index + 1 === playingRound &&
                                 workout[workoutIndex].title === "round"
@@ -378,7 +380,7 @@ function Home({ viewSize }) {
                               </Box>
                             </div>
                           ))}
-                        </HStack>
+                        </Flex>
                         <Flex
                           justifyContent={"space-between"}
                           alignItems={"center"}
@@ -393,7 +395,7 @@ function Home({ viewSize }) {
                           >
                             {toMMSS(elapsedTotalTime)}
                           </Box>
-                          <Divider />
+                          <Divider minWidth={1} />
                           <Box
                             p={"1px 5px"}
                             bgColor={"#777"}
