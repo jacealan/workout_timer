@@ -156,9 +156,9 @@ function Home({ viewSize }) {
 
     setPlayingRound(0)
     setWorkoutIndex(0)
-    setDuration(newWorkout[0].duration)
-    setInitialRemainingTime(newWorkout[0].duration)
-    setRemainingDurationTime(newWorkout[0].duration)
+    setDuration((prev) => newWorkout[0].duration)
+    setInitialRemainingTime((prev) => newWorkout[0].duration)
+    setRemainingDurationTime((prev) => newWorkout[0].duration)
 
     setKeyCircle((prev) => ++prev)
   }
@@ -176,7 +176,7 @@ function Home({ viewSize }) {
         )
 
         const newDuration = workout[newWorkoutIndex].duration
-        await setDuration(newDuration)
+        await setDuration((prev) => newDuration)
         await setInitialRemainingTime((prev) => newDuration)
         await setRemainingDurationTime((prev) => newDuration)
 
@@ -204,7 +204,7 @@ function Home({ viewSize }) {
   const onUpdate = () => {
     setElapsedTotalTime((prev) => ++prev)
     setRemainingTotalTime((prev) => --prev)
-    setRemainingDurationTime((prev) => --prev)
+    setRemainingDurationTime((prev) => prev--)
   }
 
   useEffect(() => {
@@ -407,7 +407,7 @@ function Home({ viewSize }) {
                         </Flex>
                       </VStack>
                       <Box fontSize={150} style={{ margin: 0 }}>
-                        {toMMSS(remaingDurationTime + 1)}
+                        {toMMSS(remaingDurationTime)}
                       </Box>
                       <Button
                         colorScheme={"whiteAlpha"}
