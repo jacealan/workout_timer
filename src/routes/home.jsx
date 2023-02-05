@@ -198,7 +198,7 @@ function Home({ viewSize }) {
     }
     await setKeyCircle((prev) => ++prev)
 
-    return { shouldRepeat: true, delay: 0.1 }
+    return { shouldRepeat: true, delay: 0 }
   }
 
   const onUpdate = () => {
