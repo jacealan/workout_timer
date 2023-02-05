@@ -58,7 +58,7 @@ function Home({ viewSize }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [duration, setDuration] = useState(60)
   const [initialRemainingTime, setInitialRemainingTime] = useState(duration)
-  const [remaingDurationTime, setRemainingDurationTime] = useState(duration)
+  const [remainingDurationTime, setRemainingDurationTime] = useState(duration)
 
   const [workout, setWorkout] = useState([])
   const [totalTime, setTotalTime] = useState(0)
@@ -205,6 +205,7 @@ function Home({ viewSize }) {
     setElapsedTotalTime((prev) => ++prev)
     setRemainingTotalTime((prev) => --prev)
     setRemainingDurationTime((prev) => prev--)
+    console.log(remainingDurationTime)
   }
 
   useEffect(() => {
@@ -407,7 +408,7 @@ function Home({ viewSize }) {
                         </Flex>
                       </VStack>
                       <Box fontSize={150} style={{ margin: 0 }}>
-                        {toMMSS(remaingDurationTime)}
+                        {toMMSS(remainingTime)}
                       </Box>
                       <Button
                         colorScheme={"whiteAlpha"}
