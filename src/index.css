@@ -25,6 +25,17 @@ a:active {
   color: inherit;
 }
 
+:focus {
+  outline: none;
+}
+
+/* :focus {
+  outline: 3px solid #aaa;
+}
+:focus:not(:focus-visible) {
+  outline: 0;
+} */
+
 /* body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

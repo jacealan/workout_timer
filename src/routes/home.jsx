@@ -84,6 +84,8 @@ function Home({ viewSize }) {
   const [showLog, setShowLog] = useState(false)
   const [value, onChange] = useState(new Date())
 
+  const keydownRef = useRef(null)
+
   const bell = new Audio(
     "https://www.myinstants.com/media/sounds/boxing-bell.mp3"
   )
@@ -94,6 +96,16 @@ function Home({ viewSize }) {
   const nice = new Audio(
     "https://www.myinstants.com/media/sounds/nice-shot-wii-sports.mp3"
   )
+
+  const onKeyDown = (event) => {
+    const key = event.key
+    // console.log(key)
+    // console.log(event)
+
+    if (key === " ") {
+      setIsPlaying((prev) => !prev)
+    }
+  }
 
   const getDayWorkout = (date) => {
     const result = logWorkout.current.filter(
@@ -225,6 +237,8 @@ function Home({ viewSize }) {
       window.localStorage.getItem("logWorkout")
     )
     if (logFromLocalStorage !== null) logWorkout.current = logFromLocalStorage
+
+    keydownRef.current.focus()
   }, [])
 
   useEffect(() => {
@@ -239,7 +253,7 @@ function Home({ viewSize }) {
   }, [roundCount, prepareTime, roundTime, roundEndWarningTime, restTime])
 
   return (
-    <>
+    <div ref={keydownRef} tabIndex={0} onKeyDown={onKeyDown}>
       <Center
         bgColor={
           workout[workoutIndex]?.title === "round"
@@ -751,7 +765,7 @@ function Home({ viewSize }) {
           </Flex>
         </VStack>
       </Center>
-    </>
+    </div>
   )
 }
 
