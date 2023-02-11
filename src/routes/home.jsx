@@ -253,7 +253,12 @@ function Home({ viewSize }) {
   }, [roundCount, prepareTime, roundTime, roundEndWarningTime, restTime])
 
   return (
-    <div ref={keydownRef} tabIndex={0} onKeyDown={onKeyDown}>
+    <div
+      ref={keydownRef}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      style={{ width: "100%", height: "100%" }}
+    >
       <Center
         bgColor={
           workout[workoutIndex]?.title === "round"
