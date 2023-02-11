@@ -104,6 +104,9 @@ function Home({ viewSize }) {
 
     if (key === " ") {
       setIsPlaying((prev) => !prev)
+      if (elapsedTotalTime === 0) {
+        bell.play()
+      }
     }
   }
 
